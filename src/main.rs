@@ -16,6 +16,9 @@ use scx_utils::scx_ops_open;
 
 use std::mem::MaybeUninit;
 
+use std::fs::File;
+use std::io::Read;
+
 fn main() {
     // スケルトンファイルで定義されているBpfSkelBuilderを用いてスケジューラの
     // ロード処理を行っていく。
@@ -32,7 +35,14 @@ fn main() {
     println!("[*] BPF scheduler starting!");
 
 
+    // /sys/kernel/debug/tracing/trace_pipe から文字列を読んでstdioに出力する
+    let mut file = File::open("/sys/kernel/tracing/trace_pipe").unwrap();
+    let mut buffer = [0u8; 4096];
+
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        let n = file.read(&mut buffer).unwrap();
+        if n > 0 {
+            print!("{}", String::from_utf8_lossy(&buffer[..n]));
+        }
     }
 }
