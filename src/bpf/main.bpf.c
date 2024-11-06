@@ -68,6 +68,16 @@ void BPF_STRUCT_OPS(tutorial_exit_task, struct task_struct *p,
 		p->pid, args->cancelled);
 }
 
+void BPF_STRUCT_OPS(tutorial_enable, struct task_struct *p)
+{
+	stat_inc(TUTORIAL_STAT_ENABLE);
+}
+
+void BPF_STRUCT_OPS(tutorial_disable, struct task_struct *p)
+{
+	stat_inc(TUTORIAL_STAT_DISABLE);
+}
+
 /*******************************************************************************
  * Callbacks for inspecting task state transitions
  */
@@ -130,6 +140,8 @@ SCX_OPS_DEFINE(tutorial_ops,
 	.exit		= (void *)tutorial_exit,
 	.init_task	= (void *)tutorial_init_task,
 	.exit_task	= (void *)tutorial_exit_task,
+	.enable		= (void *)tutorial_enable,
+	.disable	= (void *)tutorial_disable,
 	.runnable	= (void *)tutorial_runnable,
 	.running	= (void *)tutorial_running,
 	.stopping	= (void *)tutorial_stopping,
