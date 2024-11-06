@@ -14,6 +14,10 @@ fn idx_to_name(stat_idx: u32) -> &'static str
 		stat_idx_TUTORIAL_STAT_EXIT => "exit",
 		stat_idx_TUTORIAL_STAT_INIT_TASK => "init_task",
 		stat_idx_TUTORIAL_STAT_EXIT_TASK => "exit_task",
+		stat_idx_TUTORIAL_STAT_RUNNABLE => "runnable",
+		stat_idx_TUTORIAL_STAT_RUNNING => "running",
+		stat_idx_TUTORIAL_STAT_STOPPING => "stopping",
+		stat_idx_TUTORIAL_STAT_QUIESCENT => "quiescent",
 		_ => "[ unknown ]",
 	}
 }

@@ -29,6 +29,10 @@ void stat_inc(u32 idx)
 
 UEI_DEFINE(uei);
 
+/*******************************************************************************
+ * Callbacks for initialization and deinitialization
+ */
+
 s32 BPF_STRUCT_OPS_SLEEPABLE(tutorial_init)
 {
 	stat_inc(TUTORIAL_STAT_INIT);
@@ -64,9 +68,37 @@ void BPF_STRUCT_OPS(tutorial_exit_task, struct task_struct *p,
 		p->pid, args->cancelled);
 }
 
+/*******************************************************************************
+ * Callbacks for inspecting task state transitions
+ */
+
+void BPF_STRUCT_OPS(tutorial_runnable, struct task_struct *p, u64 enq_flags)
+{
+	stat_inc(TUTORIAL_STAT_RUNNABLE);
+}
+
+void BPF_STRUCT_OPS(tutorial_running, struct task_struct *p)
+{
+	stat_inc(TUTORIAL_STAT_RUNNING);
+}
+
+void BPF_STRUCT_OPS(tutorial_stopping, struct task_struct *p, bool runnable)
+{
+	stat_inc(TUTORIAL_STAT_STOPPING);
+}
+
+void BPF_STRUCT_OPS(tutorial_quiescent, struct task_struct *p, u64 deq_flags)
+{
+	stat_inc(TUTORIAL_STAT_QUIESCENT);
+}
+
 SCX_OPS_DEFINE(tutorial_ops,
 	.init		= (void *)tutorial_init,
 	.exit		= (void *)tutorial_exit,
 	.init_task	= (void *)tutorial_init_task,
 	.exit_task	= (void *)tutorial_exit_task,
+	.runnable	= (void *)tutorial_runnable,
+	.running	= (void *)tutorial_running,
+	.stopping	= (void *)tutorial_stopping,
+	.quiescent	= (void *)tutorial_quiescent,
 	.name		= "tutorial");
