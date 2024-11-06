@@ -92,6 +92,39 @@ void BPF_STRUCT_OPS(tutorial_quiescent, struct task_struct *p, u64 deq_flags)
 	stat_inc(TUTORIAL_STAT_QUIESCENT);
 }
 
+/*******************************************************************************
+ * Callbacks for scheduling decisions
+ */
+
+s32 BPF_STRUCT_OPS(tutorial_select_cpu, struct task_struct *p, s32 prev_cpu,
+		   u64 wake_flags)
+{
+	bool is_idle;
+
+	stat_inc(TUTORIAL_STAT_SELECT_CPU);
+
+	return scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, &is_idle);
+}
+
+int BPF_STRUCT_OPS(tutorial_enqueue, struct task_struct *p, u64 enq_flags)
+{
+	u64 slice;
+
+	stat_inc(TUTORIAL_STAT_ENQUEUE);
+
+	slice = 5000000u / scx_bpf_dsq_nr_queued(SHARED_DSQ);
+	scx_bpf_dispatch(p, SHARED_DSQ, slice, enq_flags);
+	return 0;
+}
+
+int BPF_STRUCT_OPS(tutorial_dispatch, s32 cpu, struct task_struct *prev)
+{
+	stat_inc(TUTORIAL_STAT_DISPATCH);
+
+	scx_bpf_consume(SHARED_DSQ);
+	return 0;
+}
+
 SCX_OPS_DEFINE(tutorial_ops,
 	.init		= (void *)tutorial_init,
 	.exit		= (void *)tutorial_exit,
@@ -101,4 +134,7 @@ SCX_OPS_DEFINE(tutorial_ops,
 	.running	= (void *)tutorial_running,
 	.stopping	= (void *)tutorial_stopping,
 	.quiescent	= (void *)tutorial_quiescent,
+	.select_cpu	= (void *)tutorial_select_cpu,
+	.enqueue	= (void *)tutorial_enqueue,
+	.dispatch	= (void *)tutorial_dispatch,
 	.name		= "tutorial");
