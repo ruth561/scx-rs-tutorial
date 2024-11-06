@@ -34,8 +34,8 @@ void BPF_STRUCT_OPS(tutorial_exit_task, struct task_struct *p,
 }
 
 SCX_OPS_DEFINE(tutorial_ops,
-	       .init			= (void *)tutorial_init,
-	       .exit			= (void *)tutorial_exit,
-		   .init_task		= (void *)tutorial_init_task,
-		   .exit_task		= (void *)tutorial_exit_task,
-	       .name			= "tutorial");
+	.init		= (void *)tutorial_init,
+	.exit		= (void *)tutorial_exit,
+	.init_task	= (void *)tutorial_init_task,
+	.exit_task	= (void *)tutorial_exit_task,
+	.name		= "tutorial");
