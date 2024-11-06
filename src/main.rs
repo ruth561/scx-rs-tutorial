@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
 
 mod bpf_skel;
+mod bpf_intf;
+mod stats;
+
 use bpf_skel::*;
 
 use libbpf_rs::skel::OpenSkel;
@@ -27,5 +30,6 @@ fn main() {
 
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
+        stats::report_stats(&skel);
     }
 }
