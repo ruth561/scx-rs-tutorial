@@ -22,6 +22,7 @@ fn idx_to_name(stat_idx: u32) -> &'static str
 		stat_idx_TUTORIAL_STAT_QUIESCENT => "quiescent",
 		stat_idx_TUTORIAL_STAT_SELECT_CPU => "select_cpu",
 		stat_idx_TUTORIAL_STAT_ENQUEUE => "enqueue",
+		stat_idx_TUTORIAL_STAT_DEQUEUE => "dequeue",
 		stat_idx_TUTORIAL_STAT_DISPATCH => "dispatch",
 		_ => "[ unknown ]",
 	}

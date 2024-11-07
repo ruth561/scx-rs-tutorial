@@ -127,6 +127,11 @@ int BPF_STRUCT_OPS(tutorial_enqueue, struct task_struct *p, u64 enq_flags)
 	return 0;
 }
 
+void BPF_STRUCT_OPS(tutorial_dequeue, struct task_struct *p, u64 deq_flags)
+{
+	stat_inc(TUTORIAL_STAT_DEQUEUE);
+}
+
 int BPF_STRUCT_OPS(tutorial_dispatch, s32 cpu, struct task_struct *prev)
 {
 	stat_inc(TUTORIAL_STAT_DISPATCH);
@@ -148,5 +153,6 @@ SCX_OPS_DEFINE(tutorial_ops,
 	.quiescent	= (void *)tutorial_quiescent,
 	.select_cpu	= (void *)tutorial_select_cpu,
 	.enqueue	= (void *)tutorial_enqueue,
+	.dequeue	= (void *)tutorial_dequeue,
 	.dispatch	= (void *)tutorial_dispatch,
 	.name		= "tutorial");
