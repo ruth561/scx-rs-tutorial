@@ -62,7 +62,7 @@ s32 BPF_STRUCT_OPS_SLEEPABLE(tutorial_init)
 	return scx_bpf_create_dsq(SHARED_DSQ, -1);
 }
 
-void BPF_STRUCT_OPS(tutorial_exit, struct scx_exit_info *ei)
+void BPF_STRUCT_OPS_SLEEPABLE(tutorial_exit, struct scx_exit_info *ei)
 {
 	stat_inc(TUTORIAL_STAT_EXIT);
 	record_cb_invocation(ctx, TUTORIAL_STAT_EXIT);
@@ -71,7 +71,7 @@ void BPF_STRUCT_OPS(tutorial_exit, struct scx_exit_info *ei)
 	UEI_RECORD(uei, ei);
 }
 
-s32 BPF_STRUCT_OPS(tutorial_init_task, struct task_struct *p,
+s32 BPF_STRUCT_OPS_SLEEPABLE(tutorial_init_task, struct task_struct *p,
 		   struct scx_init_task_args *args)
 {
 	stat_inc(TUTORIAL_STAT_INIT_TASK);
