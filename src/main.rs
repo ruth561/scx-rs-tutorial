@@ -4,12 +4,14 @@ mod bpf_skel;
 mod bpf_intf;
 mod stats;
 
+use bpf_intf::*;
 use bpf_skel::*;
 
 use libbpf_rs::skel::OpenSkel;
 use libbpf_rs::skel::Skel;
 use libbpf_rs::skel::SkelBuilder;
 use libbpf_rs::Link;
+use libbpf_rs::RingBufferBuilder;
 
 use anyhow::Context;
 use anyhow::Result;
@@ -20,10 +22,27 @@ use scx_utils::scx_ops_open;
 use scx_utils::uei_exited;
 use scx_utils::uei_report;
 
+use plain::Plain;
+
 use std::mem::MaybeUninit;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::time::SystemTime;
+
+unsafe impl Plain for cb_history_entry {}
+
+const NR_CBS: usize = stat_idx_TUTORIAL_NR_STATS as usize;
+const NR_CPUS: usize = 12;
+
+fn cb_history_recorder(data: &[u8], table: &mut stats::GlobalCbTable<NR_CBS, NR_CPUS>) -> i32
+{
+    let entry: &cb_history_entry = plain::from_bytes(data).unwrap();
+    table.record(entry.cpu, entry.cb_idx as usize);
+    return 0;
+}
 
 fn main() {
     let shutdown = Arc::new(AtomicBool::new(false));
@@ -40,11 +59,38 @@ fn main() {
     
     println!("[*] BPF scheduler starting!");
 
-    while !shutdown.load(Ordering::Relaxed) && !uei_exited!(&skel, uei) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    /*
+     * Table for recording the callback history
+     */
+    let table = Rc::new(RefCell::new(stats::GlobalCbTable::new()));
+    let table_clone = table.clone();
 
-        println!("[*] Statistics report");
-        stats::report_stats(&skel);
+    /*
+     * initialize ring buffer
+     */
+    let mut builder = RingBufferBuilder::new();
+    builder.add(&skel.maps.cb_history, move |data| {
+        cb_history_recorder(data, &mut table_clone.borrow_mut())
+    }).unwrap();
+    let ringbuf = builder.build().unwrap();
+
+    /*
+     * Reports the current statistics per report_duration
+     */
+    let report_duration = std::time::Duration::from_secs(1);
+    let mut prev = SystemTime::now();
+    while !shutdown.load(Ordering::Relaxed) && !uei_exited!(&skel, uei) {
+        if ringbuf.poll(std::time::Duration::from_millis(10)).is_err() {
+            break;
+        }
+
+        let now = SystemTime::now();
+        if prev + report_duration < now {
+            println!("[*] Statistics report");
+            stats::report_stats(&skel);
+            table.borrow().report();
+            prev = now;
+        }
     }
 
     println!("[*] BPF scheduler exiting..\n");

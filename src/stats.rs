@@ -10,6 +10,7 @@ use libbpf_rs::MapCore;
 fn idx_to_name(stat_idx: u32) -> &'static str
 {
 	match stat_idx {
+		stat_idx_TUTORIAL_STAT_NONE => "(none)",
 		stat_idx_TUTORIAL_STAT_INIT => "init",
 		stat_idx_TUTORIAL_STAT_EXIT => "exit",
 		stat_idx_TUTORIAL_STAT_INIT_TASK => "init_task",
@@ -79,4 +80,126 @@ pub fn report_stats(skel: &BpfSkel)
 		println!(" {:>5} |", sum);
 	}
 	println!("");
+}
+
+/******************************************************************************
+ * Statistics for tracking callback transition counts
+ */
+
+/*
+ * CbTable - Table for recording transitions of callback invocations
+ * @NR_CBS: the number of callbacks
+ * 
+ * This data structure is intended to be used for managing a single table
+ * instance. Its primary purpose is to handle per-CPU tables or a global
+ * table representing all CPUs.
+ * 
+ * self.table[prev][next] represents the count of next's invocations following
+ * prev's invocations.
+ */
+struct CbTable<const NR_CBS: usize>
+{
+	table: [[u64; NR_CBS]; NR_CBS],
+}
+
+impl<const NR_CBS: usize>
+CbTable<NR_CBS>
+{
+	fn new() -> Self
+	{
+		CbTable {
+			table: [[0; NR_CBS]; NR_CBS],
+		}
+	}
+
+	fn record(&mut self, prev_cb: usize, next_cb: usize)
+	{
+		self.table[prev_cb][next_cb] += 1;
+	}
+
+	/*
+	 * This function outputs the contents of the table in CSV format.
+	 */
+	fn report(&self)
+	{
+		print!(", ");
+		for cb_idx in 0..NR_CBS {
+			print!("{}, ", idx_to_name(cb_idx as u32));
+		}
+		println!("");
+
+		for (cb_idx, row) in self.table.iter().enumerate() {
+			print!("{}, ", idx_to_name(cb_idx as u32));
+			for n in row {
+				print!("{}, ", *n);
+			}
+			println!("");
+		}
+	}
+
+	fn get_counter(&self, prev_cb: usize, next_cb: usize) -> u64
+	{
+		self.table[prev_cb][next_cb]
+	}
+
+	fn add_counter(&mut self, prev_cb: usize, next_cb: usize, n: u64)
+	{
+		self.table[prev_cb][next_cb] += n;
+	}
+}
+
+/*
+ * GlobalCbTable - Manager that manages all CbTable per CPUs.
+ * @NR_CBS: the number of callbacks
+ * @NR_CPUS: the number of cpus
+ * 
+ * @prev_cb is the previously invoked callback.
+ */
+pub struct GlobalCbTable<const NR_CBS: usize, const NR_CPUS: usize> {
+	prev_cb: [usize; NR_CPUS],
+	table: [CbTable<NR_CBS>; NR_CPUS],
+}
+
+impl<const NR_CBS: usize, const NR_CPUS: usize>
+GlobalCbTable<NR_CBS, NR_CPUS>
+{
+	pub fn new() -> Self
+	{
+		Self {
+			prev_cb: [stat_idx_TUTORIAL_STAT_NONE as usize; NR_CPUS],
+			table: std::array::from_fn(|_| CbTable::new()),
+		}
+	}
+
+	pub fn record(&mut self, cpu: u32, cb: usize)
+	{
+		self.table[cpu as usize].record(self.prev_cb[cpu as usize], cb);
+		self.prev_cb[cpu as usize] = cb;
+	}
+
+	pub fn report(&self)
+	{
+		let mut table = CbTable::<NR_CBS>::new();
+
+		/*
+		 * Get the summation of tables across all CPUs
+		 */
+		for per_cpu_table in &self.table {
+			for prev_cb in 0..NR_CBS {
+				for next_cb in 0..NR_CBS {
+					let n = per_cpu_table.get_counter(prev_cb, next_cb);
+					table.add_counter(prev_cb, next_cb, n);
+				}
+			}
+		}
+		table.report();
+	}
+}
+
+impl<const NR_CBS: usize, const NR_CPUS: usize>
+Drop for GlobalCbTable<NR_CBS, NR_CPUS>
+{
+	fn drop(&mut self) {
+		self.report();
+	}
 }

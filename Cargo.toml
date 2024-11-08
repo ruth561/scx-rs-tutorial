@@ -9,6 +9,8 @@ libc = "0.2.137"
 libbpf-rs = "0.24.1"
 scx_utils = "1.0.5"
 ctrlc = "3.4.5"
+plain = "0.2.3"
+prettytable-rs = "=0.6.5"
 
 [build-dependencies]
 scx_utils = "1.0.5"

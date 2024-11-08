@@ -2,6 +2,7 @@
 
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
+#![allow(dead_code)]
 
 /*
  * The build script build.rs converts the header src/bpf/intf.h,

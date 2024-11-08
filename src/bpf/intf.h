@@ -13,7 +13,8 @@
  * The enum is used as the number of key in stats.
  */
 enum stat_idx {
-	TUTORIAL_STAT_INIT = 0,
+	TUTORIAL_STAT_NONE = 0,
+	TUTORIAL_STAT_INIT,
 	TUTORIAL_STAT_EXIT,
 	TUTORIAL_STAT_INIT_TASK,
 	TUTORIAL_STAT_EXIT_TASK,
@@ -28,6 +29,16 @@ enum stat_idx {
 	TUTORIAL_STAT_DEQUEUE,
 	TUTORIAL_STAT_DISPATCH,
 	TUTORIAL_NR_STATS,
+};
+
+typedef unsigned int u32;
+
+/*
+ * cb_history_entry - Data structure for entries in cb_history
+ */
+struct cb_history_entry {
+	u32 cpu;
+	u32 cb_idx;
 };
 
 #endif /* __INTF_H */
