@@ -120,7 +120,8 @@ CbTable<NR_CBS>
 	/*
 	 * This function outputs the contents of the table in CSV format.
 	 */
-	fn report(&self)
+	#[allow(unused)]
+	fn report_csv(&self)
 	{
 		print!(", ");
 		for cb_idx in 0..NR_CBS {
@@ -132,6 +133,27 @@ CbTable<NR_CBS>
 			print!("{}, ", idx_to_name(cb_idx as u32));
 			for n in row {
 				print!("{}, ", *n);
+			}
+			println!("");
+		}
+	}
+
+	fn report(&self)
+	{
+		print!("| prev \\ next |");
+		for cb_idx in 0..NR_CBS {
+			print!(" {:>10} |", idx_to_name(cb_idx as u32));
+		}
+		println!("");
+		for _ in 0..(15 + 13 * NR_CBS) {
+			print!("=");
+		}
+		println!("");
+
+		for (cb_idx, row) in self.table.iter().enumerate() {
+			print!("| {:>11} |", idx_to_name(cb_idx as u32));
+			for n in row {
+				print!(" {:>10} |", *n);
 			}
 			println!("");
 		}
