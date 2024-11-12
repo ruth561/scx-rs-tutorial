@@ -174,6 +174,25 @@ int BPF_STRUCT_OPS(tutorial_dispatch, s32 cpu, struct task_struct *prev)
 	return 0;
 }
 
+/*******************************************************************************
+ * Callbacks for CPU hotplug
+ */
+void BPF_STRUCT_OPS_SLEEPABLE(tutorial_cpu_online, s32 cpu)
+{
+	stat_inc(TUTORIAL_STAT_CPU_ONLINE);
+	record_cb_invocation(ctx, TUTORIAL_STAT_CPU_ONLINE);
+	
+	bpf_printk("cpu %d becomes online", cpu);
+}
+
+void BPF_STRUCT_OPS_SLEEPABLE(tutorial_cpu_offline, s32 cpu)
+{
+	stat_inc(TUTORIAL_STAT_CPU_OFFLINE);
+	record_cb_invocation(ctx, TUTORIAL_STAT_CPU_OFFLINE);
+
+	bpf_printk("cpu %d becomes offline", cpu);
+}
+
 SCX_OPS_DEFINE(tutorial_ops,
 	.init		= (void *)tutorial_init,
 	.exit		= (void *)tutorial_exit,
@@ -189,4 +208,6 @@ SCX_OPS_DEFINE(tutorial_ops,
 	.enqueue	= (void *)tutorial_enqueue,
 	.dequeue	= (void *)tutorial_dequeue,
 	.dispatch	= (void *)tutorial_dispatch,
+	.cpu_online	= (void *)tutorial_cpu_online,
+	.cpu_offline	= (void *)tutorial_cpu_offline,
 	.name		= "tutorial");
