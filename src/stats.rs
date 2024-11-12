@@ -144,7 +144,7 @@ CbTable<NR_CBS>
 	{
 		print!("| prev \\ next |");
 		for cb_idx in 0..NR_CBS {
-			print!(" {:>10} |", idx_to_name(cb_idx as u32));
+			print!(" {:>10.10} |", idx_to_name(cb_idx as u32));
 		}
 		println!("");
 		for _ in 0..(15 + 13 * NR_CBS) {
