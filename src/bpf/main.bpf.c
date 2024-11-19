@@ -8,6 +8,8 @@ char _license[] SEC("license") = "GPL";
 
 #define BPF_RINGBUF_SIZE (4096 * 4096)
 
+bool stats_on = false;
+
 /*
  * cb_history - BPF map used to send callback history
  */
@@ -20,10 +22,12 @@ void record_cb_invocation(void *ctx, u32 cb_idx)
 {
 	struct cb_history_entry entry;
 	
-	entry.cpu = bpf_get_smp_processor_id();
-	entry.cb_idx = cb_idx;
+	if (stats_on) {
+		entry.cpu = bpf_get_smp_processor_id();
+		entry.cb_idx = cb_idx;
 
-	bpf_ringbuf_output(&cb_history, &entry, sizeof(entry), 0);
+		bpf_ringbuf_output(&cb_history, &entry, sizeof(entry), 0);
+	}
 }
 
 /**
@@ -40,11 +44,13 @@ void stat_inc(u32 idx)
 {
 	u64 *cnt;
 	
-	cnt = bpf_map_lookup_elem(&stats, &idx);
-	if (cnt)
-		*cnt += 1;
-	else
-		bpf_printk("[ WARN ] failed to lookup elem from stats. idx = %u\n", idx);
+	if (stats_on) {
+		cnt = bpf_map_lookup_elem(&stats, &idx);
+		if (cnt)
+			*cnt += 1;
+		else
+			bpf_printk("[ WARN ] failed to lookup elem from stats. idx = %u\n", idx);
+	}
 }
 
 UEI_DEFINE(uei);

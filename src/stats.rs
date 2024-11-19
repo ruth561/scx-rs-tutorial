@@ -182,16 +182,18 @@ CbTable<NR_CBS>
 pub struct GlobalCbTable<const NR_CBS: usize, const NR_CPUS: usize> {
 	prev_cb: [usize; NR_CPUS],
 	table: [CbTable<NR_CBS>; NR_CPUS],
+	stats_on: bool,
 }
 
 impl<const NR_CBS: usize, const NR_CPUS: usize>
 GlobalCbTable<NR_CBS, NR_CPUS>
 {
-	pub fn new() -> Self
+	pub fn new(stats_on: bool) -> Self
 	{
 		Self {
 			prev_cb: [stat_idx_TUTORIAL_STAT_NONE as usize; NR_CPUS],
 			table: std::array::from_fn(|_| CbTable::new()),
+			stats_on,
 		}
 	}
 
@@ -224,6 +226,8 @@ impl<const NR_CBS: usize, const NR_CPUS: usize>
 Drop for GlobalCbTable<NR_CBS, NR_CPUS>
 {
 	fn drop(&mut self) {
-		self.report();
+		if self.stats_on {
+			self.report();
+		}
 	}
 }

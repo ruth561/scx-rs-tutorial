@@ -45,6 +45,22 @@ fn cb_history_recorder(data: &[u8], table: &mut stats::GlobalCbTable<NR_CBS, NR_
 }
 
 fn main() {
+    let mut stats_on = false;
+
+    // Parse command line args
+    let args: Vec<String> = std::env::args().collect();
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "--stats_on" => {
+                stats_on = true;
+            },
+            _ => {
+                println!("invalid arg: {}", arg);
+                return;
+            }
+        }
+    }
+
     let shutdown = Arc::new(AtomicBool::new(false));
     let shutdown_clone = shutdown.clone();
     ctrlc::set_handler(move || {
@@ -59,10 +75,12 @@ fn main() {
     
     println!("[*] BPF scheduler starting!");
 
+    skel.maps.bss_data.stats_on = stats_on;
+
     /*
      * Table for recording the callback history
      */
-    let table = Rc::new(RefCell::new(stats::GlobalCbTable::new()));
+    let table = Rc::new(RefCell::new(stats::GlobalCbTable::new(stats_on)));
     let table_clone = table.clone();
 
     /*
@@ -80,15 +98,20 @@ fn main() {
     let report_duration = std::time::Duration::from_secs(1);
     let mut prev = SystemTime::now();
     while !shutdown.load(Ordering::Relaxed) && !uei_exited!(&skel, uei) {
-        if ringbuf.poll(std::time::Duration::from_millis(10)).is_err() {
-            break;
+        if stats_on {
+            if ringbuf.poll(std::time::Duration::from_millis(10)).is_err() {
+                break;
+            }
         }
+        std::thread::sleep(std::time::Duration::from_millis(10));
 
         let now = SystemTime::now();
         if prev + report_duration < now {
-            println!("[*] Statistics report");
-            stats::report_stats(&skel);
-            table.borrow().report();
+            if stats_on {
+                println!("[*] Statistics report");
+                stats::report_stats(&skel);
+                table.borrow().report();
+            }
             prev = now;
         }
     }
@@ -100,6 +123,8 @@ fn main() {
      */
     link.detach().unwrap();
     uei_report!(&skel, uei).unwrap();
-    println!("\n[*] Final statistics report");
-    stats::report_stats(&skel);
+    if stats_on {
+        println!("\n[*] Final statistics report");
+        stats::report_stats(&skel);
+    }
 }
