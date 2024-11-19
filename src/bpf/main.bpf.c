@@ -72,13 +72,10 @@ void BPF_STRUCT_OPS_SLEEPABLE(tutorial_exit, struct scx_exit_info *ei)
 }
 
 s32 BPF_STRUCT_OPS_SLEEPABLE(tutorial_init_task, struct task_struct *p,
-		   struct scx_init_task_args *args)
+			     struct scx_init_task_args *args)
 {
 	stat_inc(TUTORIAL_STAT_INIT_TASK);
 	record_cb_invocation(ctx, TUTORIAL_STAT_INIT_TASK);
-
-	bpf_printk("[ init_task ] pid=%d, fork=%d, comm=%s",
-		p->pid, args->fork, p->comm);
 	return 0;
 }
 
@@ -87,9 +84,6 @@ void BPF_STRUCT_OPS(tutorial_exit_task, struct task_struct *p,
 {
 	stat_inc(TUTORIAL_STAT_EXIT_TASK);
 	record_cb_invocation(ctx, TUTORIAL_STAT_EXIT_TASK);
-
-	bpf_printk("[ exit_task ] pid=%d, canceled=%d",
-		p->pid, args->cancelled);
 }
 
 void BPF_STRUCT_OPS(tutorial_enable, struct task_struct *p)
@@ -147,7 +141,7 @@ s32 BPF_STRUCT_OPS(tutorial_select_cpu, struct task_struct *p, s32 prev_cpu,
 	return scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, &is_idle);
 }
 
-int BPF_STRUCT_OPS(tutorial_enqueue, struct task_struct *p, u64 enq_flags)
+void BPF_STRUCT_OPS(tutorial_enqueue, struct task_struct *p, u64 enq_flags)
 {
 	u64 slice;
 
@@ -156,7 +150,6 @@ int BPF_STRUCT_OPS(tutorial_enqueue, struct task_struct *p, u64 enq_flags)
 
 	slice = 5000000u / scx_bpf_dsq_nr_queued(SHARED_DSQ);
 	scx_bpf_dispatch(p, SHARED_DSQ, slice, enq_flags);
-	return 0;
 }
 
 void BPF_STRUCT_OPS(tutorial_dequeue, struct task_struct *p, u64 deq_flags)
@@ -165,13 +158,12 @@ void BPF_STRUCT_OPS(tutorial_dequeue, struct task_struct *p, u64 deq_flags)
 	record_cb_invocation(ctx, TUTORIAL_STAT_DEQUEUE);
 }
 
-int BPF_STRUCT_OPS(tutorial_dispatch, s32 cpu, struct task_struct *prev)
+void BPF_STRUCT_OPS(tutorial_dispatch, s32 cpu, struct task_struct *prev)
 {
 	stat_inc(TUTORIAL_STAT_DISPATCH);
 	record_cb_invocation(ctx, TUTORIAL_STAT_DISPATCH);
 
 	scx_bpf_consume(SHARED_DSQ);
-	return 0;
 }
 
 /*******************************************************************************
