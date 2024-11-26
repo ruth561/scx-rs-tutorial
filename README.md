@@ -17,6 +17,16 @@ Once built, the binary will be located at *target/debug/scx-rs-tutorial*. You ca
 $ sudo target/debug/scx-rs-tutorial
 ```
 
+# Command Line Options
+
+The `--stats_on` option reports callback invocation statistics.
+
+```
+$ sudo target/debug/scx-rs-tutorial --stats_on
+```
+
+![image](image.png)
+
 # Development Guide
 
 If you are using `clangd` as a language server, you can generate a *compile_commands.json* file with the following command:

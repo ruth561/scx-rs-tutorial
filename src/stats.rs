@@ -33,12 +33,12 @@ fn idx_to_name(stat_idx: u32) -> &'static str
 
 fn print_header(nr_cpus: u32)
 {
-	print!("| {:10} |", " ");
+	print!("|   cb \\  cpu |");
 	for cpu in 0..nr_cpus {
-		print!(" {:^5} |", cpu);
+		print!(" {:>8} |", cpu);
 	}
-	println!(" {:>5} |", "sum");
-	for _ in 0..(14 + 8 * (nr_cpus + 1)) {
+	println!(" {:>8} |", "sum");
+	for _ in 0..(15 + 11 * (nr_cpus + 1)) {
 		print!("=");
 	}
 	println!("");
@@ -67,19 +67,19 @@ pub fn report_stats(skel: &BpfSkel)
 		
 		/*
 		 * Print each row of the stats entries. For example:
-		 * |       init |     0 |     0 |     0 |     0 |     1 |
-		 * |       exit |     0 |     0 |     0 |     0 |     0 |
-		 * |  init_task |     0 |     2 |     2 |     2 |  1670 |
-		 * |  exit_task |     0 |     1 |     1 |     3 |    15 |
+		 * |        init |     0 |     0 |     0 |     0 |     1 |
+		 * |        exit |     0 |     0 |     0 |     0 |     0 |
+		 * |   init_task |     0 |     2 |     2 |     2 |  1670 |
+		 * |   exit_task |     0 |     1 |     1 |     3 |    15 |
 		 */
-		print!("| {:>10} |", idx_to_name(stat_idx));
+		print!("| {:>11} |", idx_to_name(stat_idx));
 		let mut sum = 0;
 		for data in cpu_stat_vec {
 			let cnt = u64::from_ne_bytes(data.as_slice().try_into().unwrap());
-			print!(" {:>5} |", cnt);
+			print!(" {:>8} |", cnt);
 			sum += cnt;
 		}
-		println!(" {:>5} |", sum);
+		println!(" {:>8} |", sum);
 	}
 	println!("");
 }
